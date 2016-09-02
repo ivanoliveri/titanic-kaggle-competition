@@ -121,6 +121,17 @@ for(oneDataSet in lst.datasets){
     
     oneDataSet$Age <- replace(oneDataSet$Age,is.na(oneDataSet$Age),vec.agePredictionsForNA)
     
+    #Create Dummy Variable for Mother Indicator
+    
+    vec.motherIndicator <- factor(as.numeric((oneDataSet$Age>=18 & oneDataSet$vec.titlesFilteredMiss.==1 & 
+                                                oneDataSet$Sex=="female" & oneDataSet$Parch>0)))
+    
+    #Create Dummy Variable for Child Indicator
+    
+    vec.childIndicator <- factor(as.numeric(oneDataSet$Age<18))
+    
+    oneDataSet <- data.frame(oneDataSet,vec.motherIndicator,vec.motherIndicator)
+    
     rf.survivalModel <- randomForest(Survived ~ ., data = oneDataSet, 
                                      ntree=1500,mtry=round(length(oneDataSet)*0.7),
                                      sampsize=(c("0"=150,"1"=150)),nodesize=1)
@@ -138,6 +149,17 @@ for(oneDataSet in lst.datasets){
                                                   subset = is.na(oneDataSet$Age)==T)))
   
   oneDataSet$Age <- replace(oneDataSet$Age,is.na(oneDataSet$Age),vec.agePredictionsForNA)
+  
+  #Create Dummy Variable for Mother Indicator
+  
+  vec.motherIndicator <- factor(as.numeric((oneDataSet$Age>=18 & oneDataSet$vec.titlesFilteredMiss.==1 & 
+                            oneDataSet$Sex=="female" & oneDataSet$Parch>0)))
+  
+  #Create Dummy Variable for Child Indicator
+  
+  vec.childIndicator <- factor(as.numeric(oneDataSet$Age<18))
+  
+  oneDataSet <- data.frame(oneDataSet,vec.motherIndicator,vec.motherIndicator)
   
   vec.predictions <- predict(rf.survivalModel, newdata = oneDataSet)
   
