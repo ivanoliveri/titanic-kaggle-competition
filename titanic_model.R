@@ -51,9 +51,7 @@ lst.datasets <- list(df.trainData, df.testData)
 
 for(oneDataSet in lst.datasets){
 
-  #Replace NA Values with Column Mean
-  #TODO: Apply KNN to imputate the missing ages.
-  oneDataSet[is.na(oneDataSet[,"Age"]), "Age"] <- mean(oneDataSet[,"Age"], na.rm = TRUE)
+  #Replace NA Values with Column Mean for Fare
   
   oneDataSet[is.na(oneDataSet[,"Fare"]), "Fare"] <- mean(oneDataSet[,"Fare"], na.rm = TRUE)
   
@@ -109,6 +107,20 @@ for(oneDataSet in lst.datasets){
     
     oneDataSet <- data.frame(oneDataSet[,kColumnsNamesToKeep],df.dummyDataset)
     
+    kColumnToRemoveForAgeModel <- which(names(oneDataSet)=="Survived")
+    
+    df.ageModel <- subset(oneDataSet, subset = is.na(oneDataSet$Age)!=T)[,-kColumnToRemoveForAgeModel]
+    
+    lm.ageModel <- lm(Age ~ . ,df.ageModel)
+    
+    lm.ageModelWithStepwise <- step(lm.ageModel)
+    
+    vec.agePredictionsForNA <- round(predict(lm.ageModelWithStepwise,
+                                            subset(oneDataSet,
+                                                   subset = is.na(oneDataSet$Age)==T)))
+    
+    oneDataSet$Age <- replace(oneDataSet$Age,is.na(oneDataSet$Age),vec.agePredictionsForNA)
+    
     rf.survivalModel <- randomForest(Survived ~ ., data = oneDataSet, 
                                      ntree=1500,mtry=round(length(oneDataSet)*0.7),
                                      sampsize=(c("0"=150,"1"=150)),nodesize=1)
@@ -120,6 +132,12 @@ for(oneDataSet in lst.datasets){
   kColumnsNamesToKeep <- c("Sex","Age","SibSp","Parch","Fare")
   
   oneDataSet <- data.frame(oneDataSet[,kColumnsNamesToKeep],df.dummyDataset)
+  
+  vec.agePredictionsForNA <- round(predict(lm.ageModelWithStepwise,
+                                           subset(oneDataSet,
+                                                  subset = is.na(oneDataSet$Age)==T)))
+  
+  oneDataSet$Age <- replace(oneDataSet$Age,is.na(oneDataSet$Age),vec.agePredictionsForNA)
   
   vec.predictions <- predict(rf.survivalModel, newdata = oneDataSet)
   
