@@ -1,10 +1,12 @@
 library(pROC)
 
-library(dummy)
-
 library(plyr)
 
-kFilePath <- "C:/Users/Ivan/Documents/Kaggle/Titanic/"
+library(randomForest)
+
+#kFilePath <- "C:/Users/Ivan/Documents/Kaggle/Titanic/"
+
+kFilePath <- "C:/Users/user/Documents/GitHub/titanic-kaggle-competition/"
 
 kTrainFile <- "train.csv"
 
@@ -107,15 +109,11 @@ for(oneDataSet in lst.datasets){
     
     oneDataSet <- data.frame(oneDataSet[,kColumnsNamesToKeep],df.dummyDataset)
     
-    glm.survivalModel <- glm(Survived ~ ., data = oneDataSet, family = binomial)
+    rf.survivalModel <- randomForest(Survived ~ ., data = oneDataSet, 
+                                     ntree=1500,mtry=round(length(oneDataSet)*0.7),
+                                     sampsize=(c("0"=150,"1"=150)),nodesize=1)
     
-    glm.survivalModelWithStepwise <- step(glm.survivalModel)    
-   
-    vec.predictions <- predict.glm(glm.survivalModelWithStepwise, newdata = oneDataSet)
-    
-    roc.curve <- roc(oneDataSet$Survived, vec.predictions)
-    
-    num.cutoff <- coords(roc.curve, x="best", input="threshold", best.method="youden")[[1]]
+    vec.predictions <- predict(rf.survivalModel, newdata = oneDataSet)
     
   }
   
@@ -123,10 +121,8 @@ for(oneDataSet in lst.datasets){
   
   oneDataSet <- data.frame(oneDataSet[,kColumnsNamesToKeep],df.dummyDataset)
   
-  vec.predictions <- predict.glm(glm.survivalModelWithStepwise, newdata = oneDataSet)
+  vec.predictions <- predict(rf.survivalModel, newdata = oneDataSet)
   
-  vec.predictions <- ifelse(vec.predictions>=num.cutoff,1,0)
-
   num.index <- num.index + 1
   
 }
