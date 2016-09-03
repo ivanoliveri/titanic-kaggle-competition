@@ -146,16 +146,9 @@ for(oneDataSet in lst.datasets){
     
     oneDataSet <- data.frame(oneDataSet,vec.motherIndicator,vec.childIndicator)
     
-    glm.survivalModel <- glm(Survived ~ ., data = oneDataSet, family = binomial)
+    rf.survivalModel <- randomForest(Survived ~ ., data = oneDataSet, ntree = 1000, importance = T)
     
-    glm.survivalModelWithStepwise <- step(glm.survivalModel)    
-    
-    vec.predictions <- predict.glm(glm.survivalModelWithStepwise, newdata = oneDataSet)
-    
-    roc.curve <- roc(oneDataSet$Survived, vec.predictions)
-    
-    num.cutoff <- coords(roc.curve, x="best", input="threshold", best.method="youden")[[1]]
-    
+    vec.predictions <- predict(rf.survivalModel, newdata = oneDataSet)
     
   }
   
@@ -180,9 +173,7 @@ for(oneDataSet in lst.datasets){
   
   oneDataSet <- data.frame(oneDataSet,vec.motherIndicator,vec.motherIndicator)
   
-  vec.predictions <- predict.glm(glm.survivalModelWithStepwise, newdata = oneDataSet)
-  
-  vec.predictions <- ifelse(vec.predictions>=num.cutoff,1,0)
+  vec.predictions <- predict(rf.survivalModel, newdata = oneDataSet)
   
   num.index <- num.index + 1
   
