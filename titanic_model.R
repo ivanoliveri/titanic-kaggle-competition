@@ -125,11 +125,9 @@ for(oneDataSet in lst.datasets){
     
     df.ageModel <- subset(oneDataSet, subset = is.na(oneDataSet$Age)!=T)[,-kColumnToRemoveForAgeModel]
     
-    lm.ageModel <- lm(Age ~ . ,df.ageModel)
+    rf.ageModel <- randomForest(Age ~ . ,df.ageModel, ntree=1000)
     
-    lm.ageModelWithStepwise <- step(lm.ageModel)
-    
-    vec.agePredictionsForNA <- round(predict(lm.ageModelWithStepwise,
+    vec.agePredictionsForNA <- round(predict(rf.ageModel,
                                              subset(oneDataSet,
                                                     subset = is.na(oneDataSet$Age)==T)))
     
@@ -156,7 +154,7 @@ for(oneDataSet in lst.datasets){
   
   oneDataSet <- data.frame(oneDataSet[,kColumnsNamesToKeep],df.dummyDataset)
   
-  vec.agePredictionsForNA <- round(predict(lm.ageModelWithStepwise,
+  vec.agePredictionsForNA <- round(predict(rf.ageModel,
                                            subset(oneDataSet,
                                                   subset = is.na(oneDataSet$Age)==T)))
   
