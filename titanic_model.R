@@ -170,7 +170,7 @@ for(oneDataSet in lst.datasets){
                           maxRuns=100, doTrace=0)
     
     vec.nonRejectedColumns <- 
-      names(bor.results$finalDecision[bor.results$finalDecision=="Confirmed"])
+      names(bor.results$finalDecision[bor.results$finalDecision == "Confirmed"])
     
     vec.nonRejectedColumnsPositions <-
       unlist(lapply(vec.nonRejectedColumns,
@@ -178,7 +178,17 @@ for(oneDataSet in lst.datasets){
     
     oneDataSet <- oneDataSet[,vec.nonRejectedColumnsPositions]
     
-    rf.survivalModel <- randomForest(vec.survived ~ ., data = oneDataSet, ntree = 1000, importance = T)
+    rf.survivalModel <- randomForest(vec.survived ~ ., data = oneDataSet, ntree = 750, importance = T)
+    
+    vec.predictions <- predict(rf.survivalModel, newdata = oneDataSet)
+    
+    vec.trues <- vec.survived==vec.predictions
+    
+    vec.trues <- vec.trues[vec.trues==T]
+    
+    num.accuracy <- length(vec.trues) / nrow(oneDataSet)
+    
+    print(paste("Accuracy",num.accuracy))
     
   }
   
