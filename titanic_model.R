@@ -2,6 +2,8 @@ library(pROC)
 
 library(plyr)
 
+library(Boruta)
+
 kFilePath <- "C:/Users/Ivan/Documents/GitHub/titanic-kaggle-competition/"
 
 #kFilePath <- "C:/Users/user/Documents/GitHub/titanic-kaggle-competition/"
@@ -142,11 +144,41 @@ for(oneDataSet in lst.datasets){
     
     vec.childIndicator <- factor(as.numeric(oneDataSet$Age<18))
     
-    oneDataSet <- data.frame(oneDataSet,vec.motherIndicator,vec.childIndicator)
+    #Create Dummy Variable for Age
     
-    rf.survivalModel <- randomForest(Survived ~ ., data = oneDataSet, ntree = 1000, importance = T)
+    fn_agecat <- function (x){
+      ifelse((x>=0 & x<=15) ,"0-15",
+             (ifelse((x>15 & x<=30), "16-30",
+                     (ifelse((x>30 & x<=50),"31-50","+51")
+                     )
+             )
+             )
+      )
+    }
     
-    vec.predictions <- predict(rf.survivalModel, newdata = oneDataSet)
+    vec.ageCategory <- as.factor(fn_agecat(oneDataSet$Age))
+    
+    mat.ages <- model.matrix( ~ vec.ageCategory -1)
+    
+    oneDataSet <- data.frame(oneDataSet,vec.motherIndicator,vec.childIndicator,mat.ages)
+  
+    vec.survived <- oneDataSet$Survived
+      
+    vec.survivedPosition <- which(names(oneDataSet) == "Survived")
+  
+    bor.results <- Boruta(oneDataSet[,-vec.survivedPosition], oneDataSet$Survived,
+                          maxRuns=100, doTrace=0)
+    
+    vec.nonRejectedColumns <- 
+      names(bor.results$finalDecision[bor.results$finalDecision=="Confirmed"])
+    
+    vec.nonRejectedColumnsPositions <-
+      unlist(lapply(vec.nonRejectedColumns,
+                    function(x) which(x==names(oneDataSet))))
+    
+    oneDataSet <- oneDataSet[,vec.nonRejectedColumnsPositions]
+    
+    rf.survivalModel <- randomForest(vec.survived ~ ., data = oneDataSet, ntree = 1000, importance = T)
     
   }
   
@@ -169,7 +201,25 @@ for(oneDataSet in lst.datasets){
   
   vec.childIndicator <- factor(as.numeric(oneDataSet$Age<18))
   
-  oneDataSet <- data.frame(oneDataSet,vec.motherIndicator,vec.motherIndicator)
+  #Create Dummy Variable for Age
+  
+  fn_agecat <- function (x){
+    ifelse((x>=0 & x<=15) ,"0-15",
+           (ifelse((x>15 & x<=30), "16-30",
+                   (ifelse((x>30 & x<=50),"31-50","+51")
+                   )
+           )
+           )
+    )
+  }
+  
+  vec.ageCategory <- as.factor(fn_agecat(oneDataSet$Age))
+  
+  mat.ages <- model.matrix( ~ vec.ageCategory -1)
+  
+  oneDataSet <- data.frame(oneDataSet,vec.motherIndicator,vec.childIndicator,mat.ages)
+  
+  vec.rowsToPredict <- floor(nrow(oneDataSet)/2)
   
   vec.predictions <- predict(rf.survivalModel, newdata = oneDataSet)
   
